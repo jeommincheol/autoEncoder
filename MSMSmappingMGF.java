@@ -11,11 +11,15 @@ import java.util.Vector;
 
 public class MSMSmappingMGF {
 	
-	static HashMap <String, Boolean> map = new HashMap();
+	static HashMap <String, String> map = new HashMap();
 	static BufferedWriter out;
 	static BufferedWriter min;
 	static BufferedWriter max;
 	static BufferedWriter mis;
+	static BufferedWriter peakNum;
+	static BufferedWriter masses;
+	static BufferedWriter intensities;
+	
 	public static void main(String[] args) throws IOException {
 		String msmsPath = null;
 		String mgfPath = null;
@@ -45,21 +49,31 @@ public class MSMSmappingMGF {
 		min = new BufferedWriter(new FileWriter(outPath+"\\min.txt"));
 		max = new BufferedWriter(new FileWriter(outPath+"\\max.txt"));
 		mis = new BufferedWriter(new FileWriter(outPath+"\\missMatch.txt"));
+		peakNum = new BufferedWriter(new FileWriter(outPath+"\\PeakNum.txt"));
+		masses = new BufferedWriter(new FileWriter(outPath+"\\masses.txt"));
+		intensities = new BufferedWriter(new FileWriter(outPath+"\\intensities.txt"));
+		peakNum.write("#mgfPeak\t#matchedPaek");
+		peakNum.newLine();
 		System.out.println("Reading MSGF");
 		readMGF(mgfPath);
 		out.close();
 		min.close();
 		max.close();
 		mis.close();
+		peakNum.close();
+		masses.close();
+		intensities.close();
 	}
 	
 	static void readMGF(String mgfPath) throws IOException {
 		File dirFile = new File(mgfPath);
 		File[] fileList = dirFile.listFiles();
-		String in,temp,title,mass,scan;
+		String in,temp,title,mass,scan,MSIN;
+		String[] ms,inte,io;
 		Vector<String> spec = new Vector();
 		int mgfCount = 0;
 		int msmsCount = 0;
+		int matchedNum = 0;
 		for(File f : fileList) {
 			if(f.isDirectory()) {
 				continue;
@@ -85,7 +99,33 @@ public class MSMSmappingMGF {
 							out.newLine();
 						}
 						msmsCount++;
-						map.put(in.substring(0,in.lastIndexOf("."))+"\t"+scan, false);
+						
+						MSIN = map.get(in.substring(0,in.lastIndexOf("."))+"\t"+scan);
+						io = MSIN.split("\t")[0].split(";");
+						ms = MSIN.split("\t")[1].split(";");
+						inte = MSIN.split("\t")[2].split(";");
+						peakNum.write(Integer.toString(spec.size()-6)+"\t"+MSIN.split("\t")[3]);
+						peakNum.newLine();
+						
+						matchedNum = io.length;
+						for(int i = 0; i < matchedNum; i++) {
+							if(io[i].startsWith("b") || io[i].startsWith("y")) {
+								if(io[i].contains("-")) {
+									if(io[i].contains("H2O")) {
+										masses.write(ms[i]+" ");
+										intensities.write(inte[i]+" ");
+									}
+								}
+								else {
+									masses.write(ms[i]+" ");
+									intensities.write(inte[i]+" ");
+								}
+							}
+						}
+						masses.newLine();
+						intensities.newLine();
+						
+						map.remove(in.substring(0,in.lastIndexOf("."))+"\t"+scan);
 						min.write(spec.elementAt(5));
 						min.newLine();
 						max.write(spec.elementAt(spec.size()-2));
@@ -100,21 +140,19 @@ public class MSMSmappingMGF {
 		}
 		System.out.println("-total mgf "+mgfCount);
 		System.out.println("-matched msms "+msmsCount);
-		System.out.println("-miss matched msms "+ (map.size() - msmsCount));
+		System.out.println("-miss matched msms "+ (map.size()));
 		Iterator<String> keys = map.keySet().iterator();
 		while(keys.hasNext()) {
 			String key = keys.next();
-			if(map.get(key)) {
-				mis.write(key);
-				mis.newLine();
-			}
+			mis.write(key);
+			mis.newLine();
 		}
 	}
 	
 	static void readMSMS (String msmsPath) throws IOException {
 		File dirFile = new File(msmsPath);
 		File[] fileList = dirFile.listFiles();
-		String in,temp,mgfName,index;
+		String in,temp,mgfName,index,MSIN;
 		String[] splitTemp;
 		HashMap<String,Boolean> tempMap = new HashMap();
 		int count = 0;
@@ -136,7 +174,14 @@ public class MSMSmappingMGF {
 				mgfName = splitTemp[0];
 				index = splitTemp[1];
 				if(!map.containsKey(mgfName+"\t"+index)) {
-					map.put(mgfName+"\t"+index, true);
+					/*
+					 * index 37 : matches ion
+					 * index 41 : matches masses
+					 * index 38 : matches intensity
+					 * index 42 : # matched peak
+					 */
+					MSIN = splitTemp[37]+"\t"+splitTemp[41]+"\t"+splitTemp[38]+"\t"+splitTemp[42];
+					map.put(mgfName+"\t"+index, MSIN);
 				}
 			}
 		}

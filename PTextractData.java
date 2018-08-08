@@ -32,6 +32,7 @@ public class PTextractData {
 	static int[][] CEchaDis = new int [3][10];
 	
 	static int totalPSM = 0;
+	static int matchedPSM = 0;
 	
 	public static void main(String args[]) throws IOException {
 		String dirPath = null;
@@ -89,8 +90,12 @@ public class PTextractData {
 		BufferedWriter summary = new BufferedWriter(new FileWriter(outPath+"\\summary_orbitrap_"+fragm+"_"+modif+"_"+CE+"_"+charg+"_"+pepLen+"_"+PIF+"_"+andro+".txt"));
 		subDirList(dirPath);
 		
+		System.out.println("total PSM : "+totalPSM);
+		System.out.println("matched PSM : "+matchedPSM);
 		
-		summary.write("Total PSM : "+totalPSM);
+		
+		
+		summary.write("Total PSM : "+matchedPSM);
 		summary.newLine();
 		summary.newLine();
 		
@@ -150,7 +155,7 @@ public class PTextractData {
 	public static void subDirList(String dirPath) throws IOException {
 		File dir = new File(dirPath);
 		File[]fileList = dir.listFiles();
-		
+		int count = 0;
 		for(int i = 0; i < fileList.length; i++) {
 			File file = fileList[i];
 			String fileName = file.getName();
@@ -167,6 +172,7 @@ public class PTextractData {
 				if(init == 0) {
 					out.write(temp);
 					out.newLine();
+					init++;
 				}
 				String[] split;
 				while(true) {
@@ -181,6 +187,7 @@ public class PTextractData {
 						temp = br.readLine();
 						System.out.println(temp);
 					}
+					totalPSM++;
 					if(( instr.equals("NONE") || split[instr_col].equals(instr))&&
 							(fragm.equals("NONE") || split[fragm_col].equals(fragm)) &&
 							(modif.equals("NONE") || split[modif_col].equals(modif)) &&
@@ -193,11 +200,12 @@ public class PTextractData {
 						out.newLine();
 						lenDis[Integer.parseInt(split[pepLen_col]) - 1]++;
 						CEchaDis[Integer.parseInt(split[CE_col])%3][Integer.parseInt(split[charg_col]) - 1]++;
-						totalPSM++;
+						matchedPSM++;
 					}
 				}
 				br.close();
 			}
 		}
+		
 	}
 }

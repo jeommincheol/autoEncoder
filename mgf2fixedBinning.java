@@ -13,8 +13,7 @@ public class mgf2fixedBinning {
 	static double maxMass = 1000;
 	static double binWidth = 1;
 	static int count = 0;
-	public static void main(String args[]) throws IOException {
-			
+	public static void main(String args[]) throws IOException {	
 		int i;
 		/*
 		 * -i : input directory
@@ -54,6 +53,7 @@ public class mgf2fixedBinning {
 		}
 		
 		BufferedWriter bw = new BufferedWriter(new FileWriter(outPath+"\\"+minMass+"_"+maxMass+"_"+binWidth+".txt"));
+		BufferedWriter info = new BufferedWriter(new FileWriter(outPath+"\\"+minMass+"_"+maxMass+"_"+binWidth+".oneSummary"));
 		
 		File dirFile = new File(dirPath);
 		File[] fileList = dirFile.listFiles();
@@ -69,6 +69,7 @@ public class mgf2fixedBinning {
 			
 			double binLoc = 0;
 			Vector<String> vec = new Vector();
+			int fixBinSize = fixBin.length;
 			while(true) {
 				temp = br.readLine();
 				if(temp == null) {
@@ -96,6 +97,9 @@ public class mgf2fixedBinning {
 						fixBin[i] = 0;
 					}
 					bw.newLine();
+					info.write(Integer.toString((vec.size() - 6)));
+					info.newLine();
+
 					vec.clear();
 					count++;
 				}
@@ -106,5 +110,6 @@ public class mgf2fixedBinning {
 		}
 		
 		bw.close();
+		info.close();
 	}
 }
